@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.hazelcast.com/schema/spring
+                           http://hazelcast.com/schema/spring/hazelcast-spring-3.4.xsd">
+
+<context:component-scan base-package="com.sample.spring"></context:component-scan>
+    <bean id="empDS" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://localhost:3306/EmployeeDB" />
+        <property name="username" value="root"/>
+        <property name="password" value="password"/>
+    </bean>
+
+    <bean id="employeeDAO" class="com.sample.spring.jdbc.dao.JDBCEmployeeDAO" scope="singleton">
+        <property name="dataSource" ref="empDS"/>
+    </bean>
+
+    <bean id="employeeCacheDao" class="com.sample.spring.hazelcast.dao.HazelcastEmployeeDAO"/>
+    <bean id="hazelcast" class="com.hazelcast.core.Hazelcast"/>
+
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:network port="5701" port-auto-increment="false">
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                </hz:join>
+            </hz:network>
+
+            <hz:map name="employeeMap" read-backup-data="true">
+
+                <hz:map-store enabled="true" write-delay-seconds="60"
+                              initial-mode="EAGER"
+                              implementation="employeeCacheDao"/>
+            </hz:map>
+        </hz:config>
+    </hz:hazelcast>
+
+    <hz:client id="client">
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+            <hz:member>localhost</hz:member>
+        </hz:network>
+    </hz:client>
+</beans>
