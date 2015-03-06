@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+    <!-- Tomcat specific -->
+    <property name="LOG_DIR" value="${catalina.base}/logs"/>
+
+    <appender name="swagger" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/swagger.log</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{0}:%L - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>${LOG_DIR}/swagger.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- keep 180 days' worth of history -->
+            <maxHistory>180</maxHistory>
+        </rollingPolicy>
+    </appender>
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %logger{0}:%L - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <!-- 3rd Party -->
+    <logger name="com.sun.jersey" level="INFO"/>
+    <logger name="org.springframework" level="INFO"/>
+    <!-- End 3rd Party -->
+
+    <root level="DEBUG">
+        <appender-ref ref="swagger"/>
+        <appender-ref ref="stdout"/>
+    </root>
+</configuration>
