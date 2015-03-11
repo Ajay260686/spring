@@ -30,8 +30,8 @@ public class EmployeeController {
 
     @GET
     @ApiOperation(
-            value = "Lists all CPEs",
-            notes = "Lists all CPEs"
+            value = "Lists all employees",
+            notes = "Lists all employees"
     )
     @ApiResponses(value= {
             @ApiResponse(code = 200, message = "Successful retrieval of employees"),
