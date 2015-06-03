@@ -55,7 +55,6 @@
             <scope>test</scope>
             <version>4.11</version>
         </dependency>
-        
         <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
@@ -75,7 +74,6 @@
           <version>5.1.33</version>
       </dependency>
     
-    
       <dependency>
       	<groupId>org.dbunit</groupId>
         <artifactId>dbunit</artifactId>
@@ -93,6 +91,70 @@
                 <artifactId>spring-test-dbunit</artifactId>
                 <version>1.2.0-SNAPSHOT</version>
         </dependency>
-    
   </dependencies>
+  
+  <build>
+      <plugins>
+          <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>sql-maven-plugin</artifactId>
+                <version>1.5</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>mysql</groupId>
+                        <artifactId>mysql-connector-java</artifactId>
+                        <version>5.1.26</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <driver>com.mysql.jdbc.Driver</driver>
+                    <url>jdbc:mysql://localhost:3306/</url>
+                    <username>root</username>
+                    <password>password</password>
+                    <skip>${skipTests}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-schema</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <autocommit>true</autocommit>
+                            <srcFiles>
+                                <srcFile>src/main/resources/create-employeedb.sql</srcFile>
+                            </srcFiles>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-schema-tables</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <autocommit>true</autocommit>
+                            <sqlCommand>USE testemployeedb</sqlCommand>
+                            <srcFiles>
+                                <srcFile>src/main/resources/create-employee-tables.sql</srcFile>
+                            </srcFiles>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>drop-db-after-test</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <autocommit>true</autocommit>
+                            <sqlCommand>DROP SCHEMA IF EXISTS testemployeedb</sqlCommand>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+  
 </project>

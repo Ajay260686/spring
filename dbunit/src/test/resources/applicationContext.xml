@@ -14,8 +14,8 @@
     
     <bean id="employeeDS" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name="driverClassName" value="com.mysql.jdbc.Driver" />
-         <property name="url" value="jdbc:mysql://localhost:3306/employees" />
-        <property name="username" value="root"/>
+         <property name="url" value="jdbc:mysql://localhost:3306/testemployeedb?autoReconnect=true"/>
+         <property name="username" value="root"/>
         <property name="password" value="password"/>
     </bean>
     
@@ -27,7 +27,7 @@
         <property name="dataSource" ref="employeeDS"/>
     </bean>
     
-        <bean id="sqlDataTypeFactory" class ="org.dbunit.ext.mysql.MySqlDataTypeFactory" />
+    <bean id="sqlDataTypeFactory" class ="org.dbunit.ext.mysql.MySqlDataTypeFactory" />
 
     <bean id="dbUnitDatabaseConfig" class="com.github.springtestdbunit.bean.DatabaseConfigBean">
         <property name = "datatypeFactory" ref = "sqlDataTypeFactory" />
