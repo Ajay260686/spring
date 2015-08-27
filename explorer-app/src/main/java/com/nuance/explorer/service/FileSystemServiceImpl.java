@@ -1,19 +1,28 @@
 package com.nuance.explorer.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.nuance.explorer.domain.File;
+
+import java.util.ArrayList;
+import java.util.List;
 @Service
 public class FileSystemServiceImpl implements FileSystemService {
+	
+	private static final transient Logger log = LoggerFactory.getLogger(FileSystemServiceImpl.class.getName());
+	
 	private List<File> files = new ArrayList<File>();
+	
 	public List<File> getAllFiles(String directoryPath) {
-		
+
+		log.info(
+				"Retrieved all files and directories recursively for the directory path = {}",
+				new Object[] { directoryPath });
 		java.io.File folder = new java.io.File(directoryPath);
-		
-		return getFilesForFolder(folder);
+		List<File> files = getFilesForFolder(folder);
+		return files;
 	}
 	
 	private List<File> getFilesForFolder(final java.io.File folder) {
