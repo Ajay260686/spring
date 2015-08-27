@@ -33,7 +33,7 @@ public class FileSystemController {
     	return files;
     }
     
-    @RequestMapping(value="/",
+    @RequestMapping(value="/file",
     				method = RequestMethod.GET,
     				headers = "Accept=application/json")
     @ResponseBody

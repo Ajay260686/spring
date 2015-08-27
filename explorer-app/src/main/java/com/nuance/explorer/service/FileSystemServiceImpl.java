@@ -17,11 +17,11 @@ public class FileSystemServiceImpl implements FileSystemService {
 	
 	public List<File> getAllFiles(String directoryPath) {
 
+		java.io.File folder = new java.io.File(directoryPath);
+		List<File> files = getFilesForFolder(folder);
 		log.info(
 				"Retrieved all files and directories recursively for the directory path = {}",
 				new Object[] { directoryPath });
-		java.io.File folder = new java.io.File(directoryPath);
-		List<File> files = getFilesForFolder(folder);
 		return files;
 	}
 	
@@ -32,7 +32,7 @@ public class FileSystemServiceImpl implements FileSystemService {
 				File file = new File();
 				file.setDirectory(true);
 				file.setFullPath(fileEntry.getPath());
-				file.setSize(fileEntry.length() / 1024);
+				file.setSize(fileEntry.length());
 				files.add(file);
 				getFilesForFolder(fileEntry);
 			}
@@ -40,7 +40,7 @@ public class FileSystemServiceImpl implements FileSystemService {
 				File file = new File();
 				file.setDirectory(false);
 				file.setFullPath(fileEntry.getPath());
-				file.setSize(fileEntry.length() / 1024);
+				file.setSize(fileEntry.length());
 				files.add(file);
 			}
 		}
@@ -49,14 +49,25 @@ public class FileSystemServiceImpl implements FileSystemService {
 	}
 	
 	public File getFile(String filePath) {
+		
 		java.io.File file= new java.io.File(filePath);
+		
 		File fileToReturn = null;
+		
 		if(!file.isDirectory()) {
 			fileToReturn = new File();
 			fileToReturn.setFullPath(file.getPath());
-			fileToReturn.setDirectory(false);
-			fileToReturn.setSize(file.length()/1024);
+			fileToReturn.setDirectory(file.isDirectory());
+			fileToReturn.setSize(file.length());
+			fileToReturn.setExecutable(file.canExecute());
+			fileToReturn.setReadable(file.canRead());
+			fileToReturn.setWritable(file.canWrite());
+			fileToReturn.setFreeSpace(file.getFreeSpace());
+			fileToReturn.setTotalSpace(file.getTotalSpace());
+			fileToReturn.setUsableSpace(file.getUsableSpace());
+			fileToReturn.setLastModified(file.lastModified());
 		}
+		log.info("Retrieved file with path = {}", new Object[] { filePath });
 		return fileToReturn;
 	}
 }
