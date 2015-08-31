@@ -1,4 +1,4 @@
-package com.nuance.explorer.domain;
+package com.nuance.explorer.dto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,13 +6,15 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement
-public class Files {
+import com.nuance.explorer.dto.FileDTO;
 
-	private List<File> files;
+@XmlRootElement
+public class FilesDTO {
+
+	private List<FileDTO> files;
 	
 	@XmlElement
-	public List<File> getFiles(){
+	public List<FileDTO> getFiles(){
 		if (files == null) {
             files = new ArrayList<>();
         }

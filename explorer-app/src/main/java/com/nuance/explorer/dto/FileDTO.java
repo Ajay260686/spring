@@ -1,9 +1,9 @@
-package com.nuance.explorer.domain;
+package com.nuance.explorer.dto;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
-public class File {
+public class FileDTO {
 
 	private String fullPath;
 	

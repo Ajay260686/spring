@@ -2,12 +2,12 @@ package com.nuance.explorer.service;
 
 import java.util.List;
 
-import com.nuance.explorer.domain.File;
+import com.nuance.explorer.dto.FileDTO;
 
 public interface FileSystemService {
 
-	List<File> getAllFiles(String directoryPath);
+	List<FileDTO> getAllFiles(String directoryPath);
 	
-	File getFile(String filePath);
+	FileDTO getFile(String filePath);
 	
 }

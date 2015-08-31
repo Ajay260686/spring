@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.nuance.explorer.domain.File;
+import com.nuance.explorer.dto.FileDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,23 +13,23 @@ public class FileSystemServiceImpl implements FileSystemService {
 	
 	private static final transient Logger log = LoggerFactory.getLogger(FileSystemServiceImpl.class.getName());
 	
-	private List<File> files = new ArrayList<File>();
+	private List<FileDTO> files = new ArrayList<FileDTO>();
 	
-	public List<File> getAllFiles(String directoryPath) {
+	public List<FileDTO> getAllFiles(String directoryPath) {
 
 		java.io.File folder = new java.io.File(directoryPath);
-		List<File> files = getFilesForFolder(folder);
+		List<FileDTO> files = getFilesForFolder(folder);
 		log.info(
 				"Retrieved all files and directories recursively for the directory path = {}",
 				new Object[] { directoryPath });
 		return files;
 	}
 	
-	private List<File> getFilesForFolder(final java.io.File folder) {
+	private List<FileDTO> getFilesForFolder(final java.io.File folder) {
 		
 		for(java.io.File fileEntry : folder.listFiles()) {
 			if(fileEntry.isDirectory()) {				
-				File file = new File();
+				FileDTO file = new FileDTO();
 				file.setDirectory(true);
 				file.setFullPath(fileEntry.getPath());
 				file.setSize(fileEntry.length());
@@ -37,7 +37,7 @@ public class FileSystemServiceImpl implements FileSystemService {
 				getFilesForFolder(fileEntry);
 			}
 			else {
-				File file = new File();
+				FileDTO file = new FileDTO();
 				file.setDirectory(false);
 				file.setFullPath(fileEntry.getPath());
 				file.setSize(fileEntry.length());
@@ -45,17 +45,16 @@ public class FileSystemServiceImpl implements FileSystemService {
 			}
 		}
 		return files;
-		
 	}
 	
-	public File getFile(String filePath) {
+	public FileDTO getFile(String filePath) {
 		
 		java.io.File file= new java.io.File(filePath);
 		
-		File fileToReturn = null;
+		FileDTO fileToReturn = null;
 		
 		if(!file.isDirectory()) {
-			fileToReturn = new File();
+			fileToReturn = new FileDTO();
 			fileToReturn.setFullPath(file.getPath());
 			fileToReturn.setDirectory(file.isDirectory());
 			fileToReturn.setSize(file.length());
