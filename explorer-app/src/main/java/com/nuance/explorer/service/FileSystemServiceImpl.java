@@ -6,14 +6,16 @@ import org.springframework.stereotype.Service;
 
 import com.nuance.explorer.dto.FileDTO;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 @Service
 public class FileSystemServiceImpl implements FileSystemService {
 	
 	private static final transient Logger log = LoggerFactory.getLogger(FileSystemServiceImpl.class.getName());
 	
-	private List<FileDTO> files = new ArrayList<FileDTO>();
+	private List<FileDTO> filesDtoList = new ArrayList<FileDTO>();
 	
 	public List<FileDTO> getAllFiles(String directoryPath) {
 
@@ -24,27 +26,29 @@ public class FileSystemServiceImpl implements FileSystemService {
 				new Object[] { directoryPath });
 		return files;
 	}
-	
+
 	private List<FileDTO> getFilesForFolder(final java.io.File folder) {
-		
-		for(java.io.File fileEntry : folder.listFiles()) {
-			if(fileEntry.isDirectory()) {				
-				FileDTO file = new FileDTO();
-				file.setDirectory(true);
-				file.setFullPath(fileEntry.getPath());
-				file.setSize(fileEntry.length());
-				files.add(file);
-				getFilesForFolder(fileEntry);
-			}
-			else {
-				FileDTO file = new FileDTO();
-				file.setDirectory(false);
-				file.setFullPath(fileEntry.getPath());
-				file.setSize(fileEntry.length());
-				files.add(file);
+
+		File[] files = folder.listFiles();
+		if (files != null && files.length > 0) {
+			for (File fileEntry : files) {
+				if (fileEntry.isDirectory()) {
+					FileDTO file = new FileDTO();
+					file.setDirectory(true);
+					file.setFullPath(fileEntry.getPath());
+					file.setSize(fileEntry.length());
+					filesDtoList.add(file);
+					getFilesForFolder(fileEntry);
+				} else {
+					FileDTO file = new FileDTO();
+					file.setDirectory(false);
+					file.setFullPath(fileEntry.getPath());
+					file.setSize(fileEntry.length());
+					filesDtoList.add(file);
+				}
 			}
 		}
-		return files;
+		return filesDtoList;
 	}
 	
 	public FileDTO getFile(String filePath) {
