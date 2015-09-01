@@ -9,10 +9,10 @@ import org.springframework.validation.Validator;
 
 import com.nuance.explorer.dto.PathDTO;
 @Component
-public class PathValidator implements Validator {
+public class FilePathValidator implements Validator {
 
 	@Override
-	public boolean supports(Class<?> arg0) {
+	public boolean supports(Class<?> clazz) {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -23,15 +23,12 @@ public class PathValidator implements Validator {
 		String pathToValidate = ((PathDTO)path).getPath();
 		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "path", "field.required");
 		File file = new File(pathToValidate);
-		if(!file.exists()){
-			errors.rejectValue("path", "path.invalid", "Path does not exist");
+		if (!file.exists()) {
+			errors.rejectValue("path", "path.invalid", "File with path does not exist");
 		}
-		else {
-			boolean isDirectory = file.isDirectory();
-			if (!isDirectory) {
-				errors.rejectValue("path", "path.invalid",
-						"The path is invalid");
-			}
+		else if(file.isDirectory()) {
+			errors.rejectValue("path", "path.invalid", "Invalid path, should be a file path");
 		}
 	}
+
 }

@@ -13,19 +13,19 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nuance.explorer.dto.FilesDTO;
 import com.nuance.explorer.dto.FileDTO;
+import com.nuance.explorer.dto.FilesDTO;
 import com.nuance.explorer.dto.PathDTO;
 import com.nuance.explorer.dto.ValidationErrorDTO;
 import com.nuance.explorer.exception.InvalidPathException;
 import com.nuance.explorer.service.FileSystemService;
 import com.nuance.explorer.service.FileSystemServiceImpl;
-import com.nuance.explorer.validator.PathValidator;
+import com.nuance.explorer.validator.DirectoryPathValidator;
+import com.nuance.explorer.validator.FilePathValidator;
 
 @RestController
 @RequestMapping("/fileexplorer")
@@ -37,7 +37,10 @@ public class FileSystemController {
 	private FileSystemService fileSystemService;
 	
 	@Autowired
-	private PathValidator pathValidator;
+	private DirectoryPathValidator directoryPathValidator;
+	
+	@Autowired
+	private FilePathValidator filePathValidator;
 	
 	@Autowired
 	private MessageSource messageSource;
@@ -50,7 +53,7 @@ public class FileSystemController {
     		                               BindingResult result) throws InvalidPathException {
     	
     	//Errors
-		pathValidator.validate(pathDto, result);
+    	directoryPathValidator.validate(pathDto, result);
 		if (result.hasErrors()) {
 			log.debug("Could not getAllFilesAndDirectories, path is invalid");
 			throw new InvalidPathException(result, "Invalid path", null);
@@ -63,14 +66,21 @@ public class FileSystemController {
 		}
     }
     
-    @RequestMapping(value="/file",
-    				method = RequestMethod.GET,
-    				headers = "Accept=application/json")
-    @ResponseBody
-    public FileDTO getFileDetails(@RequestParam("filePath") String filePath){
-    	return fileSystemService.getFile(filePath);
-    }
-    
+	@RequestMapping(value = "/file", method = RequestMethod.GET, headers = "Accept=application/json")
+	@ResponseBody
+	public FileDTO getFileDetails(@ModelAttribute PathDTO pathDto,
+								  BindingResult result) throws InvalidPathException {
+
+		filePathValidator.validate(pathDto, result);
+		if (result.hasErrors()) {
+			log.debug("Received an exception while processing the request");
+			throw new InvalidPathException(result,
+					"An error occurred while processing the request", null);
+		} else {
+			return fileSystemService.getFile(pathDto.getPath());
+		}
+	}
+
     @ExceptionHandler(InvalidPathException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
