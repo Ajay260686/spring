@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.support.PagedListHolder;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,7 +51,7 @@ public class FileSystemController {
     		        method = RequestMethod.GET, 
     		        headers = "Accept=application/json")
     @ResponseBody
-    public Object getAllFilesAndDirectories(@ModelAttribute PathDTO pathDto,
+    public Object getAllFilesAndDirectories(@RequestParam( "page" ) int page, @RequestParam( "size" ) int size, @ModelAttribute PathDTO pathDto,
     		                               BindingResult result) throws InvalidPathException {
     	
     	//Errors
@@ -60,9 +62,12 @@ public class FileSystemController {
 		}
 		else {
 			log.debug("Request parameter is OK...fetching files for directory path....");
-			FilesDTO files = new FilesDTO();
-			files.getFiles().addAll(fileSystemService.getAllFiles(pathDto.getPath()));
-			return files;
+			List<FileDTO> filesList = fileSystemService.getAllFiles(pathDto.getPath());
+			PagedListHolder<FileDTO> pagedListHolder = new PagedListHolder<FileDTO>();
+			pagedListHolder.setPage(page);
+			pagedListHolder.setPageSize(size);
+			pagedListHolder.setSource(filesList);
+			return pagedListHolder.getPageList();
 		}
     }
     

@@ -2,13 +2,13 @@ package com.nuance.explorer.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.nuance.explorer.dto.FileDTO;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 @Service
 public class FileSystemServiceImpl implements FileSystemService {
@@ -17,6 +17,7 @@ public class FileSystemServiceImpl implements FileSystemService {
 	
 	private List<FileDTO> filesDtoList = new ArrayList<FileDTO>();
 	
+	@Cacheable(value="filesCache", key="#directoryPath")
 	public List<FileDTO> getAllFiles(String directoryPath) {
 
 		java.io.File folder = new java.io.File(directoryPath);
