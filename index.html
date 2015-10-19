@@ -99,9 +99,13 @@ Spring has implemented the lookup method. </p>
     public void someOperation() {
        getMyHelper().doSomethingHelpful();
 }
+</code></pre>
 
+<p>Method Lookup Injection is intended for use when you want to work with two beans of different life
+cycles. Avoid the temptation to use Method Lookup Injection when the beans share the same life cycle,
+especially if they are singletons.</p>
 
-&lt;beans xmlns="http://www.springframework.org/schema/beans"
+<pre><code>&lt;beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.springframework.org/schema/beans
    http://www.springframework.org/schema/beans/spring-beans-3.1.xsd"&gt;
@@ -116,9 +120,493 @@ Spring has implemented the lookup method. </p>
  &lt;/bean&gt;
 </code></pre>
 
-<p>Method Lookup Injection is intended for use when you want to work with two beans of different life
-cycles. Avoid the temptation to use Method Lookup Injection when the beans share the same life cycle,
-especially if they are singletons.</p>
+<h3>
+<a id="choosing-instantiation-mode-" class="anchor" href="#choosing-instantiation-mode-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Choosing instantiation mode ==</h3>
+
+<p>Choose singleton when :
+• Shared objects with no state: When you have an object that maintains no state and
+  has many dependent objects. Because you do not need synchronization if there is
+  no state, you do not really need to create a new instance of the bean each time a
+  dependent object needs to use it for some processing.
+• Shared object with read-only state: This is similar to the previous point, but you
+  have some read-only state. In this case, you still do not need synchronization, so
+  creating an instance to satisfy each request for the bean is just adding additional
+  overhead.
+• Shared object with shared state: If you have a bean that has state that must be
+  shared, then singleton is the ideal choice. In this case, ensure that your
+  synchronization for state writes is as granular as possible.
+• High throughput objects with writable state: If you have a bean that is used a great
+  deal in your application, then you may find that keeping a singleton and
+  synchronizing all write access to the bean state allows for better performance than
+  constantly creating hundreds of instances of the bean. When using this approach,
+  try to keep the synchronization as granular as possible without sacrificing
+  consistency. You will find that this approach is particularly useful when your
+  application creates a large number of instances over a long period of time, when
+  your shared object has only a small amount of writable state, or when the
+  instantiation of a new instance is expensive.</p>
+
+<p>Other scopes :</p>
+
+<p>• Request: For web application use. When using Spring MVC for web application,
+   beans with request scope will be instantiated for every HTTP request and then
+  destroyed when the request is completed.
+• Session: For web application use. When using Spring MVC for web applications,
+   beans with session scope will be instantiated for every HTTP session and then
+  destroyed when the session is over.
+• Global session: For portlet-based web applications. The global session scope beans
+   can be shared among all portlets within the same Spring MVC–powered portal
+    application.
+• Thread: A new bean instance will be created by Spring when requested by a new
+   thread, while for the same thread, the same bean instance will be returned. Note
+  that this scope is not registered by default.</p>
+
+<h3>
+<a id="different-modes-of-autowiring" class="anchor" href="#different-modes-of-autowiring" aria-hidden="true"><span class="octicon octicon-link"></span></a>Different Modes of Autowiring</h3>
+
+<p>Spring supports four modes for autowiring: byName, byType, constructor, default, and no (which is the
+default). </p>
+
+<ul>
+<li>When using byName autowiring, Spring attempts to wire each property to a bean of the same
+name. So, if the target bean has a property named foo and a foo bean is defined in the
+ApplicationContext, the foo bean is assigned to the foo property of the target.</li>
+<li>When using byType autowiring, Spring attempts to wire each of the properties on the target bean
+automatically using a bean of the same type in the ApplicationContext. So, if you have a property of type
+String on the target bean and a bean of type String in the ApplicationContext, then Spring wires the
+String bean to the target bean’s String property. If you have more than one bean of the same type, in
+this case String, in the same ApplicationContext, then Spring is unable to decide which one to use for
+the autowiring and throws an exception (of type
+org.springframework.beans.factory.NoSuchBeanDefinitionException).</li>
+<li>The constructor autowiring mode functions just like byType wiring, except that it uses constructors
+rather than setters to perform the injection. Spring attempts to match the greatest numbers of arguments
+it can in the constructor. So, if your bean has two constructors, one that accepts a String and one that
+accepts a String and an Integer, and you have both a String and an Integer bean in your
+ApplicationContext, Spring uses the two-argument constructor.</li>
+<li>In default mode, Spring will choose between constructor and byType modes automatically. If your
+bean has a default (no-arguments) constructor, then Spring uses byType; otherwise, it uses constructor.</li>
+</ul>
+
+<h3>
+<a id="bean-life-cycle-management" class="anchor" href="#bean-life-cycle-management" aria-hidden="true"><span class="octicon octicon-link"></span></a>Bean Life-Cycle Management</h3>
+
+<p>In general, two life-cycle events are particularly relevant to a bean: post-initialization and pre-destruction.
+In the context of Spring, the post-initialization event is raised as soon as Spring finishes setting all
+the property values on the bean and finishes any dependency checks that you configured it to perform.
+The pre-destruction event is fired just before Spring destroys the bean instance. However, for beans with
+prototype scope, the pre-destruction event will not be fired by Spring. The design of Spring is that the
+initialization life-cycle callback methods will be called on objects regardless of bean scope, while for
+beans with prototype scope, the destruction life-cycle callback methods will not be called. Spring
+provides three mechanisms a bean can use to hook into each of these events and perform some
+additional processing: interface-based, method-based, and annotation-based mechanisms.</p>
+
+<p>Using the interface-based mechanism, your bean implements an interface specific to the type of
+notification it wants to receive, and Spring notifies the bean via a callback method defined in the
+interface. For the method-based mechanism, Spring allows you to specify, in your ApplicationContext
+configuration, the name of a method to call when the bean is initialized and the name of a method to call
+when the bean is destroyed. For the annotation mechanism, you can use JSR-250 annotations to specify
+the method that Spring should call after construction or before destruction.</p>
+
+<p>if you are coupling your application to Spring in other ways, using the interface method allows you to specify the callback 
+once and then forget about it. If you are defining a lot of beans of the same type that need to take advantage of the life-cycle notifications,then using the interface mechanism can avoid the need for specifying the life-cycle callback methods for
+every bean in the XML configuration file. Using JSR-250 annotations is also another viable option, since it’s a standard defined by the JCP and you are also not coupled to Spring’s specific annotations. Just make sure that the IoC container you are running your application on supports the JSR-250 standard.</p>
+
+<p>Overall, the choice of which mechanism you use for receiving life-cycle notifications depends on
+your application requirements. If you are concerned about portability or you are just defining one or two
+beans of a particular type that need the callbacks, then use the method-based mechanism. If you use
+annotation-type configuration and certain that you are using an IoC container that supports JSR-250,
+then use the annotation mechanism. If you are not too concerned about portability or you are defining
+many beans of the same type that need the life-cycle notifications, then using the interface-based
+mechanism is the best way to ensure that your beans always receive the notifications they are expecting.
+If you plan to use a bean across many different Spring projects, then you almost certainly want the
+functionality of that bean to be as self-contained as possible, so you should definitely use the interface-
+based mechanism.</p>
+
+<p>Post Initilization methods :
+1.  Execute a Method When a Bean Is Created
+     
+            
+                Clarence Ho
+           
+           
+                100
+          
+2. Implementing the InitializingBean Interface
+The InitializingBean interface defines a single method, afterPropertiesSet(), that serves the same purpose as the init() method.</p>
+
+<ol>
+<li>JSR250 @PostConstruct</li>
+</ol>
+
+<h3>
+<a id="pre-destruction-call-backs" class="anchor" href="#pre-destruction-call-backs" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pre Destruction call backs</h3>
+
+<p>The destruction callback is an ideal mechanism for ensuring that your applications shut down
+gracefully and do not leave resources open or in an inconsistent state. However, you still have to decide
+whether to use the destruction method callback, the DisposableBean interface, or the @PreDestroy
+annotation. Again, let the requirements of your application drive your decision in this respect; use the
+method callback where portability is an issue, and use the DisposableBean interface or a JSR-250
+annotation to reduce the amount of configuration required.</p>
+
+<h3>
+<a id="beannameaware-applicationcontextaware" class="anchor" href="#beannameaware-applicationcontextaware" aria-hidden="true"><span class="octicon octicon-link"></span></a>BeanNameAware ApplicationContextAware</h3>
+
+<h3>
+<a id="factorybeans" class="anchor" href="#factorybeans" aria-hidden="true"><span class="octicon octicon-link"></span></a>FactoryBeans</h3>
+
+<p>One of the problems that you will face when using Spring is how to create and then inject dependencies
+that cannot be created simply by using the new operator. To overcome this problem, Spring provides the
+FactoryBean interface that acts as an adaptor for objects that cannot be created and managed using the
+standard Spring semantics. Typically, you use FactoryBeans to create beans that you cannot use the new
+operator to create such as those you access through static factory methods, although this is not always
+the case. Simply put, a FactoryBean is a bean that acts as a factory for other beans. FactoryBeans are
+configured within your ApplicationContext like any normal bean, but when Spring uses the FactoryBean
+interface to satisfy a dependency or lookup request, it does not return the FactoryBean; instead, it invokes
+the FactoryBean.getObject() method and returns the result of that invocation.</p>
+
+<h3>
+<a id="spring-profiles" class="anchor" href="#spring-profiles" aria-hidden="true"><span class="octicon octicon-link"></span></a>Spring Profiles</h3>
+
+<p>Spring’s profile feature lets us as application developers define the profiles by ourselves and activate
+them either programmatically or by passing in the JVM argument. By using Spring’s profile support, you
+can now use the same application archive and deploy to all different environments, by passing in the
+correct profiles as an argument during JVM startup. For example, you can have applications with
+different profiles such as (dev, hibernate), (prd, jdbc), and so on, with each different combination
+representing the running environment (development or production) and the data access library to use
+(Hibernate or JDBC). It brings application profile management into the programming side.
+But this approach also has its drawbacks. For example, some may argue that putting all the
+configuration for different environments into application configuration files or Java classes and
+bundling them together will be error prone if not handled carefully (e.g., the administrator forgot to set
+the correct JVM argument in their application server environment). Packing files for all profiles together
+will also make the package a bit larger than usual. Again, let the application and configuration
+requirements drive you to select the approach that best fits your project.</p>
+
+<h3>
+<a id="propertysource" class="anchor" href="#propertysource" aria-hidden="true"><span class="octicon octicon-link"></span></a>PropertySource</h3>
+
+<p>context:property-placeholder </p>
+
+<h3>
+<a id="configuration--using-jsr-330-annontations" class="anchor" href="#configuration--using-jsr-330-annontations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration  using JSR-330 annontations</h3>
+
+<p>JEE 6 provides support for JSR-330 (Dependency Injection for Java), which is a collection of annotations for expressing an application’s DI configuration within a JEE container or other compatible IoC framework. Spring also supports and recognizes those annotations. Using JSR-330 annotations can help you ease the migration to the JEE 6 container or othercompatible IoC container (e.g., Google Guice) away from Spring.</p>
+
+<h3>
+<a id="aop" class="anchor" href="#aop" aria-hidden="true"><span class="octicon octicon-link"></span></a>AOP</h3>
+
+<p>AOP is often referred to as a tool for implementing crosscutting concerns. When you “cut through” the unfamiliar
+terminology, you use AOP for modularizing individual pieces of logic, known as concerns, and you apply
+these concerns to many parts of an application. Logging and security are typical examples of
+crosscutting concerns that are present in many applications. Consider an application that logs the start
+and end of every method for debugging purposes. You will probably refactor the logging code into a
+special class, but you still have to call methods on that class twice per method in your application in
+order to perform the logging. Using AOP, you can simply specify that you want the methods on your
+logging class to be invoked before and after each method call in your application.</p>
+
+<p>There are two distinct types of AOP: static and dynamic. In static AOP,like that provided by AspectJ’s (<a href="http://eclipse.org/aspectj/">http://eclipse.org/aspectj/</a>) compile-time weaving mechanisms, the crosscutting logic is applied to your code at compile time, and you cannot change it without modifying the code and recompiling. With dynamic AOP,
+like Spring AOP, crosscutting logic is applied dynamically, at runtime. This allows you to make changes in the distribution of crosscutting without recompiling the application. </p>
+
+<h3>
+<a id="aop-concepts" class="anchor" href="#aop-concepts" aria-hidden="true"><span class="octicon octicon-link"></span></a>AOP Concepts</h3>
+
+<p>• Joinpoints: A joinpoint is a well-defined point during the execution of your
+   application. Typical examples of joinpoints include a call to a method, the Method
+  Invocation itself, class initialization, and object instantiation. Joinpoints are a core
+ concept of AOP and define the points in your application at which you can insert
+additional logic using AOP.
+• Advice: The code that is executed at a particular joinpoint is the advice. There are
+   many different types of advice, such as before, which executes before the
+  joinpoint, and after, which executes after it. In OOP, an advice comes in the form
+ of a method within a class.
+• Pointcuts: A pointcut is a collection of joinpoints that you use to define when
+   advice should be executed. By creating pointcuts, you gain fine-grained control
+  over how you apply advice to the components in your application. As mentioned
+ previously, a typical joinpoint is a Method Invocation. A typical pointcut is the
+collection of all Method Invocations in a particular class. Often you can compose
+pointcuts in complex relationships to further constrain when advice is executed.
+• Aspects: An aspect is the combination of advice and pointcuts. This combination
+   results in a definition of the logic that should be included in the application and
+  where it should execute.
+• Weaving: This is the process of actually inserting aspects into the application code
+   at the appropriate point. For compile-time AOP solutions, this is, unsurprisingly,
+  done at compile time, usually as an extra step in the build process. Likewise, for
+ runtime AOP solutions, the weaving process is executed dynamically at runtime.</p>
+
+<p>AspectJ supports another weaving mechanism called load-time weaving (LTW), in
+which it intercepts the underlying JVM class loader and provides weaving to the
+bytecode when it is being loaded by the class loader.
+• Target: An object whose execution flow is modified by some AOP process is
+   referred to as the target object. Often you see the target object referred to as the
+  advised object.
+• Introduction: This is the process by which you can modify the structure of an
+   object by introducing additional methods or fields to it. You can use introduction
+  to make any object implement a specific interface without needing the object’s
+   class to implement that interface explicitly.</p>
+
+<h3>
+<a id="types-of-aop" class="anchor" href="#types-of-aop" aria-hidden="true"><span class="octicon octicon-link"></span></a>Types of AOP</h3>
+
+<p>Static AOP
+Many of the first AOP implementations were static. In static AOP, the weaving process forms another
+step in the build process for an application. In Java terms, you achieve the weaving process in a static
+AOP implementation by modifying the actual bytecode of your application, changing and extending the
+application code as necessary. Clearly, this is a well-performing way of achieving the weaving process
+because the end result is just Java bytecode, and you do not perform any special tricks at runtime to
+determine when advice should be executed.
+The drawback of this mechanism is that any modifications you make to the aspects, even if you
+simply want to add another joinpoint, require you to recompile the entire application</p>
+
+<p>Dynamic AOP
+Dynamic AOP implementations, like Spring AOP, differ from static AOP implementations in that the
+weaving process is performed dynamically at runtime. How this is achieved is implementation-
+dependent, but as you will see, Spring’s adopted approach is to create proxies for all advised objects,
+allowing for advice to be invoked as required. The slight drawback of dynamic AOP is that, typically, it
+does not perform as well as static AOP, but the performance is steadily increasing. The major benefit of
+dynamic AOP implementations is the ease with which you can modify the entire aspect set of an
+application without needing to recompile the main application code</p>
+
+<p>Internally, Spring has two proxy implementations: the JDK dynamic proxy and the CGLIB proxy. By
+default, when the target object to be advised implements some sort of an interface, Spring will use a JDK
+dynamic proxy to create proxy instances of the target. However, when the advised target object doesn’t
+implement an interface (e.g., it’s a concrete class), CGLIB will be used for proxy instance creation. One
+major reason is that JDK dynamic proxy only supports proxying of interfaces</p>
+
+<p>The ProxyFactory class controls the weaving and proxy creation process in Spring AOP. Before you
+can actually create a proxy, you must specify the advised or target object. You can do this, as you saw
+earlier, using the setTarget() method. Internally, ProxyFactory delegates the proxy creation process
+to an instance of DefaultAopProxyFactory, which in turn delegates to either Cglib2AopProxy or
+JdkDynamicAopProxy, depending on the settings of your application.</p>
+
+<h3>
+<a id="before-advice" class="anchor" href="#before-advice" aria-hidden="true"><span class="octicon octicon-link"></span></a>Before Advice</h3>
+
+<h3>
+<a id="after-advice" class="anchor" href="#after-advice" aria-hidden="true"><span class="octicon octicon-link"></span></a>After Advice</h3>
+
+<h3>
+<a id="around-advice" class="anchor" href="#around-advice" aria-hidden="true"><span class="octicon octicon-link"></span></a>Around Advice</h3>
+
+<p>Around advice functions like a combination of before and after advice, with one big difference—you can
+modify the return value. Not only that, but you can prevent the method from actually executing. This
+means that using around advice, you can essentially replace the entire implementation of a method with
+new code. Around advice in Spring is modeled as an interceptor using the MethodInterceptor interface.
+There are many uses for around advice, and you will find that many features of Spring are created using
+method interceptors, such as the remote proxy support and the transaction management features.
+Method interception is also a good mechanism for profiling the execution of your application
+use MethodInterceptor</p>
+
+<h3>
+<a id="point-cuts" class="anchor" href="#point-cuts" aria-hidden="true"><span class="octicon octicon-link"></span></a>Point cuts</h3>
+
+<p>ProxyFactory.addAdvice() method is usedto configure advice for a proxy. this method delegates to addAdvisor() behind the scenes,
+creating an instance of DefaultPointcutAdvisor and configuring it with a pointcut that points to all
+methods. In this way, the advice is deemed to apply to all methods on the target. In some cases, such as
+when you are using AOP for logging purposes, this may be desirable, but in other cases you may want to
+limit the methods to which an advice applies.
+Of course, you could simply perform the checking in the advice itself that the method being advised
+is the correct one, but this approach has several drawbacks. First, hard-coding the list of acceptable
+methods into the advice reduces the advice’s reusability. By using pointcuts, you can configure the
+methods to which an advice applies, without needing to put this code inside the advice; this clearly
+increases the reuse value of the advice. The second and third drawbacks with hard-coding the list of
+methods into the advice are performance related. To check the method being advised in the advice, you
+need to perform the check each time any method on the target is invoked. This clearly reduces the
+performance of your application. When you use pointcuts, the check is performed once for each
+method, and the results are cached for later use. The other performance-related drawback of not using
+pointcuts to restrict the list-advised methods is that Spring can make optimizations for nonadvised
+methods when creating a proxy, which results in faster invocations on nonadvised methods. These
+optimizations are covered in greater detail when we discuss proxies later in the chapter.
+We strongly recommend that you avoid the temptation to hard-code method checks into your
+advice and instead use pointcuts wherever possible to govern the applicability of advice to methods on
+the target</p>
+
+<p>Static pointcuts
+Spring calls the matches(Method, Class) method of the MethodMatcher once
+for every method on the target, caching the return value for subsequent invocations of those methods. In
+this way, the check for method applicability is performed only once for each method, and subsequent
+invocations of a method do not result in an invocation of matches().</p>
+
+<p>Dynamic pointcuts</p>
+
+<p>Spring still performs a static check using matches(Method, Class) the
+first time a method is invoked to determine the overall applicability of a method. However, in addition to
+this and provided that the static check returned true, Spring performs a further check for each
+invocation of a method using the matches(Method, Class, Object[]) method. In this way, a dynamic
+MethodMatcher can determine whether a pointcut should apply based on a particular invocation of a
+method, not just on the method itself. </p>
+
+<h3>
+<a id="understanding-proxies" class="anchor" href="#understanding-proxies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Understanding proxies</h3>
+
+<p>The core goal of a proxy is to intercept Method Invocations and, where necessary, execute chains
+of advice that apply to a particular method. The management and invocation of advice is largely proxy
+independent and is managed by the Spring AOP framework. However, the proxy is responsible for
+intercepting calls to all methods and passing them as necessary to the AOP framework for the advice to
+be applied.
+In addition to this core functionality, the proxy must also support a set of additional features. It is
+possible to configure the proxy to expose itself via the AopContext class (which is an abstract class) so
+that you can retrieve the proxy and invoke advised methods on the proxy from the target object. The
+proxy is responsible for ensuring that when this option is enabled via ProxyFactory.setExposeProxy(),
+the proxy class is appropriately exposed. In addition to this, all proxy classes implement the Advised
+interface by default, which allows for, among other things, the advice chain to be changed after the proxy
+has been created. A proxy must also ensure that any methods that return this—that is, return the proxied
+target—do in fact return the proxy and not the target.</p>
+
+<h3>
+<a id="jdk-dynamic-proxy" class="anchor" href="#jdk-dynamic-proxy" aria-hidden="true"><span class="octicon octicon-link"></span></a>JDK Dynamic Proxy</h3>
+
+<p>Unlike the CGLIB proxy, the JDK proxy can generate proxies only of interfaces, not classes. In this way, any object you want to proxy must implement at least one interface. In general, it is good design to use interfaces for your classes, but it is not always possible, especially when you are working with third-party or legacy code. In this case, you must use the CGLIB proxy.
+When you are using the JDK proxy, all method calls are intercepted by the JVM and routed to the
+invoke() method of the proxy. This method then determines whether the method in question is advised
+(by the rules defined by the pointcut), and if so, it invokes the advice chain and then the method itself
+using reflection. In addition to this, the invoke() method performs all the logic discussed in the
+previous section.
+The JDK proxy makes no determination between methods that are advised and unadvised until it is
+in the invoke() method. This means that for unadvised methods on the proxy, the invoke() method is
+still called, all the checks are still performed, and the method is still invoked using reflection. Obviously,
+this incurs runtime overhead each time the method is invoked, even though the proxy often performs no
+additional processing other than to invoke the unadvised method via reflection.</p>
+
+<h3>
+<a id="using-cglib-proxies" class="anchor" href="#using-cglib-proxies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using CGLIB Proxies</h3>
+
+<p>With the JDK proxy, all decisions about how to handle a particular Method Invocation are handled at
+runtime each time the method is invoked. When you use CGLIB, CGLIB dynamically generates the
+bytecode for a new class on the fly for each proxy, reusing already generated classes wherever possible.
+When a CGLIB proxy is first created, CGLIB asks Spring how it wants to handle each method. This
+means that many of the decisions that are performed in each call to invoke() on the JDK proxy are
+performed just once for the CGLIB proxy. Because CGLIB generates actual bytecode, there is also a lot
+more flexibility in the way you can handle methods. For instance, the CGLIB proxy generates the
+appropriate bytecode to invoke any unadvised methods directly, reducing the overhead introduced by
+the proxy. In addition to this, the CGLIB proxy determines whether it is possible for a method to return
+this; if not, it allows the method call to be invoked directly, again reducing the runtime overhead.</p>
+
+<h3>
+<a id="spring-jdbc" class="anchor" href="#spring-jdbc" aria-hidden="true"><span class="octicon octicon-link"></span></a>Spring JDBC</h3>
+
+<h3>
+<a id="drivermanagerdatasource" class="anchor" href="#drivermanagerdatasource" aria-hidden="true"><span class="octicon octicon-link"></span></a>DriverManagerDataSource</h3>
+
+<p>You can use Spring to manage the database connection for you by providing a bean that implements
+javax.sql.DataSource. The difference between a DataSource and a Connection is that a DataSource
+provides and manages Connections.
+DriverManagerDataSource (under the package org.springframework.jdbc.datasource) is the simplest
+implementation of a DataSource. By looking at the class name, you can guess that it simply calls the
+DriverManager to obtain a connection. The fact that DriverManagerDataSource doesn’t support database
+connection pooling makes this class unsuitable for anything other than testing</p>
+
+<p>In real-world applications, you can use Apache Commons BasicDataSource
+(<a href="http://commons.apache.org/dbcp/">http://commons.apache.org/dbcp/</a>) or a DataSource implemented by a JEE application server (e.g.,
+JBoss, WebSphere, WebLogic, GlassFish, etc.), which may further increase the performance of the
+application. </p>
+
+<h3>
+<a id="the-jdbctemplate-class" class="anchor" href="#the-jdbctemplate-class" aria-hidden="true"><span class="octicon octicon-link"></span></a>The JdbcTemplate Class</h3>
+
+<p>This class represents the core of Spring’s JDBC support. It can execute all types of SQL statements. In the
+most simplistic view, you can classify the data definition and data manipulation statements. Data
+definition statements cover creating various database objects (tables, views, stored procedures, and so
+on). Data manipulation statements manipulate the data and can be classified as select and update
+statements. A select statement generally returns a set of rows; each row has the same set of columns. An
+update statement modifies the data in the database but does not return any results.
+The JdbcTemplate class allows you to issue any type of SQL statement to the database and return any
+type of result</p>
+
+<h3>
+<a id="namedparameterjdbctemplate" class="anchor" href="#namedparameterjdbctemplate" aria-hidden="true"><span class="octicon octicon-link"></span></a>NamedParameterJdbcTemplate</h3>
+
+<pre><code>public class JdbcContactDao implements ContactDao, InitializingBean {
+   // Other methods omitted
+   public String findLastNameById(Long id) {
+   String sql = "select last_name from contact where id = :contactId";
+   SqlParameterSource namedParameters =
+                 new MapSqlParameterSource("contactId", id);
+   return namedParameterJdbcTemplate.queryForObject(sql,
+                                                    namedParameters, String.class);
+}  
+</code></pre>
+
+<p>}</p>
+
+<h3>
+<a id="retrieving-domain-objects-with-rowmapper" class="anchor" href="#retrieving-domain-objects-with-rowmapper" aria-hidden="true"><span class="octicon octicon-link"></span></a>Retrieving Domain Objects with RowMapper</h3>
+
+<p>Rather than retrieving a single value, most of the time you will want to query one or more rows and then
+transform each row into the corresponding domain object.
+Spring’s RowMapper interface (under the package org.springframework.jdbc.core) provides a
+simple way for you to perform mapping from a JDBC resultset to POJOs</p>
+
+<pre><code>public class JdbcContactDao implements ContactDao, InitializingBean {
+   // Other methods omitted
+   public List&lt;Contact&gt; findAll() {
+        String sql = "select id, first_name, last_name, birth_date from contact";
+                   return jdbcTemplate.query(sql, new ContactMapper());
+ }
+ private static final class ContactMapper implements RowMapper&lt;Contact&gt; {
+ public Contact mapRow(ResultSet rs, int rowNum) throws SQLException {
+        Contact contact = new Contact();
+        contact.setId(rs.getLong("id"));
+        contact.setFirstName(rs.getString("first_name"));
+        contact.setLastName(rs.getString("last_name"));
+        contact.setBirthDate(rs.getDate("birth_date"));
+        return contact;
+ }
+}
+</code></pre>
+
+<p>}</p>
+
+<h3>
+<a id="retrieving-nested-domain-objects-with-resultsetextractor" class="anchor" href="#retrieving-nested-domain-objects-with-resultsetextractor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Retrieving Nested Domain Objects with ResultSetExtractor</h3>
+
+<p>Let’s proceed to a bit more complicated example, in which we need to retrieve the data from the parent
+(CONTACT) and child (CONTACT_TEL_DETAIL) table with a join and transform the data back into the nested
+object (ContactTelDetail within Contact) accordingly.
+The previously mentioned RowMapper is suitable only for row base mapping to a single domain
+object. For a more complicated object structure, we need to use the ResultSetExtractor interface. To
+demonstrate its use, let’s add one more method, findAllWithDetail(), into the ContactDao interface. The
+method should populate the list of contacts with their telephone details.</p>
+
+<p>// Import statements omitted
+   public class JdbcContactDao implements ContactDao, InitializingBean {
+       public List findAllWithDetail() {
+           String sql = "select c.id, c.first_name, c.last_name, c.birth_date" +
+                        ", t.id as contact_tel_id, t.tel_type, t.tel_number from contact c " +
+                        "left join contact_tel_detail t on c.id = t.contact_id";
+           return jdbcTemplate.query(sql, new ContactWithDetailExtractor());
+   }</p>
+
+<p>private static final class ContactWithDetailExtractor implements
+       ResultSetExtractor&gt; {</p>
+
+<pre><code>   public List&lt;Contact&gt; extractData(ResultSet rs) throws SQLException,
+     DataAccessException {
+        Map&lt;Long, Contact&gt; map = new HashMap&lt;Long, Contact&gt;();
+</code></pre>
+
+<p>Spring Classes That Model JDBC Operations
+In the preceding section, you saw how JdbcTemplate and the related data mapper utility classes had
+greatly simplified the programming model in developing data access logic with JDBC. Built on top of
+JdbcTemplate, Spring also provides a number of useful classes that model JDBC data operations and let
+developers maintain the query and transformation logic from resultset to domain objects in a more
+object-oriented fashion. As mentioned, those class are packaged under
+org.springframework.jdbc.object. Specifically, we will discuss the following classes:</p>
+
+<p>MappingSqlQuery: The MappingSqlQuery class allows you to wrap the
+query string together with the mapRow() method into a single class.</p>
+
+<p>SqlUpdate: The SqlUpdate class allows you to wrap any SQL update statement
+into it. It also provides a lot of useful functions for you to bind SQL parameters,
+retrieve the RDBMS-generated key after a new record is inserted, and so on.</p>
+
+<p>BatchSqlUpdate: As the name implies, the class allows you to perform batch
+update operations. For example, you can loop through a Java List object and
+have the BatchSqlUpdate queue up the records and submit the update
+statements for you in a batch. You can set the batch size and flush the operation
+anytime as you want.</p>
+
+<p>SqlFunction: The SqlFunction class allows you to call stored functions in
+the database with argument and return types.</p>
+
+<p>== Spring Hibernate Support == </p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/rohitsardesai50/spring">Spring Notes</a> is maintained by <a href="https://github.com/rohitsardesai50">rohitsardesai50</a>.</span>
