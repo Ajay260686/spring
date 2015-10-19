@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Spring Notes by rohitsardesai50</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Spring Notes</h1>
+      <h2 class="project-tagline">spring , spring jdbc , spring data, jpa , hibernate</h2>
+      <a href="https://github.com/rohitsardesai50/spring" class="btn">View on GitHub</a>
+      <a href="https://github.com/rohitsardesai50/spring/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/rohitsardesai50/spring/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h3>
+<a id="dependency-injection" class="anchor" href="#dependency-injection" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependency Injection</h3>
+
+<p>Context Dependency Lookup(CDL) v/s Dependency Injection
+The Dependency Pull code must actively obtain a reference to the registry and interact with it to obtain the
+dependencies, and using CDL requires your classes to implement a specific interface and look up all
+dependencies manually. When you are using injection, the most your classes have to do is allow
+dependencies to be injected using either constructors or setters.</p>
+
+<p>Using injection, you are free to use your classes completely decoupled from the IoC container that is
+supplying dependent objects with their collaborators manually, whereas with lookup, your classes are
+always dependent on the classes and interfaces defined by the container. Another drawback with lookup
+is that it becomes very difficult to test your classes in isolation from the container. Using injection,
+testing your components is trivial, because you can simply provide the dependencies yourself using the
+appropriate constructor or setter.</p>
+
+<p>The biggest reason to choose injection over lookup is that it makes your
+life easier. You write substantially less code when you are using injection, and the code that you do write
+is simple and can, in general, be automated by a good IDE. You will notice that all of the code in the
+injection samples is passive, in that it doesn’t actively try to accomplish a task. The most exciting thing
+you see in injection code is objects getting stored in a field only; no other codes were involved in pulling
+the dependency from any registry or container. Therefore, the code is much simpler and less error
+prone. Passive code is much simpler to maintain than active code, because there is very little that can go
+wrong.</p>
+
+<h3>
+<a id="constructor-vs-setter-injection-" class="anchor" href="#constructor-vs-setter-injection-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Constructor v/s Setter Injection ==</h3>
+
+<p>Constructor Injection is particularly useful when you
+absolutely must have an instance of the dependency class before your component is used. Many
+containers, Spring included, provide a mechanism for ensuring that all dependencies are defined when
+you use Setter Injection, but by using Constructor Injection, you assert the requirement for the
+dependency in a container-agnostic manner.
+Setter Injection is useful in a variety of cases. If the component is exposing its dependencies to the
+container but is happy to provide its own defaults, then Setter Injection is usually the best way to
+accomplish this. Another benefit of Setter Injection is that it allows dependencies to be declared on an
+interface</p>
+
+<h3>
+<a id="beanfactory--applicationcontext" class="anchor" href="#beanfactory--applicationcontext" aria-hidden="true"><span class="octicon octicon-link"></span></a>Beanfactory / ApplicationContext</h3>
+
+<p>If your application needs only DI support, you can interact with the Spring DI container via the
+BeanFactory interface.
+ApplicationContext interface is an extension to BeanFactory. In addition to DI services,
+the ApplicationContext also provides other services, such as transaction and AOP service, message
+source for internationalization (i18n), and application event handling, to name a few.</p>
+
+<h3>
+<a id="spring-configuration-options-xml-and-java-annotations" class="anchor" href="#spring-configuration-options-xml-and-java-annotations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Spring Configuration Options (XML and Java Annotations)</h3>
+
+<p>One common approach nowadays is to define the application infrastructure (e.g., data source,
+transaction manager, JMS connection factory, JMX, etc.) in XML file, while defining the DI configuration
+(injectable beans and beans’ dependencies) in annotations. </p>
+
+<h3>
+<a id="using-method-injection" class="anchor" href="#using-method-injection" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using Method Injection</h3>
+
+<p>Lookup Method Injection
+Lookup Method Injection was added to Spring since version 1.1 to overcome the problems encountered
+when a bean depends on another bean with a different life cycle—specifically, when a singleton depends
+on a nonsingleton. In this situation, both Setter and Constructor Injection result in the singleton
+maintaining a single instance of what should be a nonsingleton bean. In some cases, you will want to have
+the singleton bean obtain a new instance of the nonsingleton every time it requires the bean in question</p>
+
+<p>Typically, you can achieve this by having the singleton bean implement the
+ApplicationContextAware interface (we will discuss this interface in next chapter). Then, using the
+ApplicationContext instance, the singleton bean can look up a new instance of the nonsingleton
+dependency every time it needs it. Lookup Method Injection allows the singleton bean to declare that it
+requires a nonsingleton dependency and that it receive a new instance of the nonsingleton bean each
+time it needs to interact with it, without needing to implement any Spring-specific interfaces.
+Lookup Method Injection works by having your singleton declare a method, the lookup method,
+which returns an instance of the nonsingleton bean. When you obtain a reference to the singleton in
+your application, you are actually receiving a reference to a dynamically created subclass on which
+Spring has implemented the lookup method. </p>
+
+<pre><code>public abstract class AbstractLookupDemoBean implements DemoBean {
+    public abstract MyHelper getMyHelper();
+    public void someOperation() {
+       getMyHelper().doSomethingHelpful();
+}
+
+
+&lt;beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+   http://www.springframework.org/schema/beans/spring-beans-3.1.xsd"&gt;
+  &lt;bean id="helper" class="com.apress.prospring3.ch4.mi.MyHelper" scope="prototype"/&gt;
+  &lt;bean id="abstractLookupBean" class="com.apress.prospring3.ch4.mi.AbstractLookupDemoBean"&gt;
+  &lt;lookup-method name="getMyHelper" bean="helper"/&gt;
+  &lt;/bean&gt;
+ &lt;bean id="standardLookupBean" class="com.apress.prospring3.ch4.mi.StandardLookupDemoBean"&gt;
+     &lt;property name="myHelper"&gt;
+        &lt;ref local="helper"/&gt;
+     &lt;/property&gt;
+ &lt;/bean&gt;
+</code></pre>
+
+<p>Method Lookup Injection is intended for use when you want to work with two beans of different life
+cycles. Avoid the temptation to use Method Lookup Injection when the beans share the same life cycle,
+especially if they are singletons.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/rohitsardesai50/spring">Spring Notes</a> is maintained by <a href="https://github.com/rohitsardesai50">rohitsardesai50</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
